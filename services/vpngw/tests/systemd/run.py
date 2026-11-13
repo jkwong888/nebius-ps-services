@@ -32,6 +32,7 @@ def main() -> None:
     parser.add_argument("--historical-package-upgrades", action="store_true")
     parser.add_argument("--static-recovery-only", action="store_true")
     parser.add_argument("--static-recovery-timing-only", action="store_true")
+    parser.add_argument("--static-start-action-only", action="store_true")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--candidate-wheel", type=Path)
     parser.add_argument("--release-wheels", type=Path)
@@ -53,6 +54,7 @@ def main() -> None:
                 args.package_migration_only,
                 args.static_recovery_only,
                 args.static_recovery_timing_only,
+                args.static_start_action_only,
             )
         ):
             parser.error("historical qualification is a separate fixture lane")
@@ -62,8 +64,14 @@ def main() -> None:
         return
     project = Path(__file__).resolve().parents[2]
     tests = ["/workspace/tests/integration/test_ssh_bootstrap.py"]
-    static_recovery_lane = args.static_recovery_only or args.static_recovery_timing_only
-    if args.static_recovery_timing_only:
+    static_recovery_lane = (
+        args.static_recovery_only
+        or args.static_recovery_timing_only
+        or args.static_start_action_only
+    )
+    if args.static_start_action_only:
+        tests = ["/workspace/tests/integration/test_static_start_action.py"]
+    elif args.static_recovery_timing_only:
         tests = ["/workspace/tests/integration/test_static_recovery_timing.py"]
     elif args.static_recovery_only:
         tests = ["/workspace/tests/integration/test_static_recovery_lifecycle.py"]
