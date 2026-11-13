@@ -31,6 +31,7 @@ def main() -> None:
     parser.add_argument("--package-migration-only", action="store_true")
     parser.add_argument("--historical-package-upgrades", action="store_true")
     parser.add_argument("--static-recovery-only", action="store_true")
+    parser.add_argument("--static-recovery-timing-only", action="store_true")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--candidate-wheel", type=Path)
     parser.add_argument("--release-wheels", type=Path)
@@ -51,6 +52,7 @@ def main() -> None:
                 args.modernization_only,
                 args.package_migration_only,
                 args.static_recovery_only,
+                args.static_recovery_timing_only,
             )
         ):
             parser.error("historical qualification is a separate fixture lane")
@@ -60,7 +62,10 @@ def main() -> None:
         return
     project = Path(__file__).resolve().parents[2]
     tests = ["/workspace/tests/integration/test_ssh_bootstrap.py"]
-    if args.static_recovery_only:
+    static_recovery_lane = args.static_recovery_only or args.static_recovery_timing_only
+    if args.static_recovery_timing_only:
+        tests = ["/workspace/tests/integration/test_static_recovery_timing.py"]
+    elif args.static_recovery_only:
         tests = ["/workspace/tests/integration/test_static_recovery_lifecycle.py"]
     elif args.package_migration_only:
         tests = ["/workspace/tests/integration/test_runtime_modernization.py"]
@@ -193,8 +198,8 @@ def main() -> None:
             "qualification_plugin",
             *tests,
         ]
-        if args.static_recovery_only:
-            command.remove("-x")  # Keep results for all seven test-first cases.
+        if static_recovery_lane:
+            command.remove("-x")  # Retain every declared recovery case.
         with evidence.with_suffix(".collection.log").open("x") as log:
             run(*command, "--collect-only", stdout=log, stderr=subprocess.STDOUT, timeout=60)
         declared = json.loads(
@@ -228,11 +233,11 @@ def main() -> None:
             # Keep the entire diagnostic stream, including subprocess timeouts.
             run(
                 *command, stdout=log, stderr=subprocess.STDOUT,
-                timeout=3600 if args.static_recovery_only else 1200,
+                timeout=3600 if static_recovery_lane else 1200,
             )
     finally:
         if created:
-            if args.static_recovery_only:
+            if static_recovery_lane:
                 try:
                     packets = subprocess.run(
                         ["docker", "exec", name, "tar", "-C", "/tmp", "-czf", "-",
