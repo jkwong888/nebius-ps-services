@@ -33,6 +33,8 @@ def main() -> None:
     parser.add_argument("--static-recovery-only", action="store_true")
     parser.add_argument("--static-recovery-timing-only", action="store_true")
     parser.add_argument("--static-start-action-only", action="store_true")
+    parser.add_argument("--static-recovery-traffic-only", action="store_true")
+    parser.add_argument("--case-filter", help="Run only cases matching this pytest -k expression")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--candidate-wheel", type=Path)
     parser.add_argument("--release-wheels", type=Path)
@@ -55,6 +57,8 @@ def main() -> None:
                 args.static_recovery_only,
                 args.static_recovery_timing_only,
                 args.static_start_action_only,
+                args.static_recovery_traffic_only,
+                args.case_filter,
             )
         ):
             parser.error("historical qualification is a separate fixture lane")
@@ -68,12 +72,13 @@ def main() -> None:
         args.static_recovery_only
         or args.static_recovery_timing_only
         or args.static_start_action_only
+        or args.static_recovery_traffic_only
     )
     if args.static_start_action_only:
         tests = ["/workspace/tests/integration/test_static_start_action.py"]
     elif args.static_recovery_timing_only:
         tests = ["/workspace/tests/integration/test_static_recovery_timing.py"]
-    elif args.static_recovery_only:
+    elif args.static_recovery_only or args.static_recovery_traffic_only:
         tests = ["/workspace/tests/integration/test_static_recovery_lifecycle.py"]
     elif args.package_migration_only:
         tests = ["/workspace/tests/integration/test_runtime_modernization.py"]
@@ -208,6 +213,10 @@ def main() -> None:
         ]
         if static_recovery_lane:
             command.remove("-x")  # Retain every declared recovery case.
+        if args.case_filter:
+            command.extend(("-k", args.case_filter))
+        if args.static_recovery_traffic_only:
+            command[2:2] = ["-e", "VPNGW_STATIC_RECOVERY_OBSERVE_CONTRACT=1"]
         with evidence.with_suffix(".collection.log").open("x") as log:
             run(*command, "--collect-only", stdout=log, stderr=subprocess.STDOUT, timeout=60)
         declared = json.loads(
