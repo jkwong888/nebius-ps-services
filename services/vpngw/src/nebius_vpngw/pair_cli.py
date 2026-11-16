@@ -9,7 +9,7 @@ from pathlib import Path
 import typer
 import yaml
 
-from . import pair_apply, pair_config
+from . import pair_apply, pair_config, pair_existing
 from .config_loader import load_local_config
 
 EXAMPLES = {
@@ -20,6 +20,9 @@ EXAMPLES = {
         "nebius-vpngw pair create-config ./regional --left a.config.yaml --right b.config.yaml --name regional",
     ),
     ("pair", "apply"): ("nebius-vpngw pair apply regional/pair.json --dry-run",),
+    ("pair", "link-existing"): (
+        "nebius-vpngw pair link-existing ./regional-reference --left a.config.yaml --right b.config.yaml --connection-a intersite --connection-b intersite --name regional",
+    ),
     ("pair", "status"): ("nebius-vpngw pair status regional/pair.json",),
 }
 
@@ -110,9 +113,40 @@ def create_config(
     typer.echo(f"Pair manifest: {result}")
 
 
+@app.command("link-existing", epilog=_examples("pair", "link-existing"))
+def link_existing(
+    directory: Path = typer.Argument(
+        ..., help="Private directory for reference-only pair metadata"
+    ),
+    left: Path = typer.Option(
+        ..., exists=True, readable=True, help="Original side A configuration"
+    ),
+    right: Path = typer.Option(
+        ..., exists=True, readable=True, help="Original side B configuration"
+    ),
+    connection_a: str = typer.Option(..., help="Existing reciprocal connection name in side A"),
+    connection_b: str = typer.Option(..., help="Existing reciprocal connection name in side B"),
+    name: str = typer.Option(..., help="Name for the operator coordination reference"),
+    profile_a: str | None = typer.Option(None, help="Side A operator CLI profile"),
+    profile_b: str | None = typer.Option(None, help="Side B operator CLI profile"),
+) -> None:
+    """Coordinate existing regional files without changing topology or credentials."""
+    try:
+        path = pair_existing.link(
+            directory,
+            name,
+            {"a": left, "b": right},
+            {"a": connection_a, "b": connection_b},
+            {"a": profile_a, "b": profile_b},
+        )
+    except (OSError, ValueError, KeyError, TypeError, IndexError):
+        raise typer.BadParameter("Existing regional pair could not be bound safely") from None
+    typer.echo(f"Pair reference: {path}")
+
+
 @app.command("apply", epilog=_examples("pair", "apply"))
 def apply(
-    manifest: Path = typer.Argument(..., exists=True, readable=True, help="Generated pair.json"),
+    manifest: Path = typer.Argument(..., exists=True, readable=True, help="Regional pair.json"),
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Preview both regional child plans without mutation"
     ),
@@ -151,6 +185,8 @@ def apply(
     if prepare_network:
         with pair_apply.writer(manifest):
             value, _ = pair_config.load(manifest)
+            if value["schema"] != pair_config.SCHEMA:
+                raise typer.BadParameter("Existing pair does not permit network preparation")
             for side in pair_config.SIDES:
                 _run(value, manifest, side, "prep-network", "--no-interactive")
             pair_config.bind_endpoints(manifest)

@@ -84,7 +84,7 @@ class Child:
         # Holding the same open flock description prevents a new parent from
         # starting while orphaned children still hold regional owner journals.
         inherited = os.fstat(request["lock_fd"])
-        lock = (self.config.parent / ".pair.lock").stat()
+        lock = (Path(request["manifest"]).parent / ".pair.lock").stat()
         if (inherited.st_dev, inherited.st_ino) != (lock.st_dev, lock.st_ino):
             raise RuntimeError("Pair child lost its parent writer exclusion")
 

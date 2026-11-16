@@ -273,6 +273,7 @@ EXPECTED_PUBLIC_COMMAND_PATHS = (
     ("pair",),
     ("pair", "create-config"),
     ("pair", "apply"),
+    ("pair", "link-existing"),
     ("pair", "status"),
     ("access",),
     ("access", "add-operator"),

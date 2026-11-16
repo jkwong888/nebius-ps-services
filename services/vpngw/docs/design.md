@@ -10359,6 +10359,14 @@ The coordinator and surviving children retain one inherited writer lock. A pendi
 pair binds exact configuration and wheel identities; regional child journals own
 resume and effect settlement. Fresh observations release both preparation and
 owner-unlock barriers before any remote-route convergence wait.
+An additive `nebius-vpngw.existing-pair.v1` manifest can instead reference original
+private regional configurations through `pair link-existing`. It pins raw bytes,
+complete configuration digests, deployment identities and the selected reciprocal
+connection graph without copying credentials or changing additional peers. Original
+absolute YAML paths retain lifecycle authority. The pair lock stays beside the
+manifest, while regional children keep their original configuration paths. Existing
+references reject network preparation and endpoint rewriting. The canonical regional
+owners, paired repair confirmation and phase barriers remain unchanged.
 A child discards a typed changed-file observation while a barrier publication
 settles and rereads within its original operation deadline. It checks the parent
 again before every attempt and accepts only the exact invocation and receipt

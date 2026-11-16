@@ -3242,6 +3242,25 @@ Child reports persist outcome and readiness as plain JSON values, including
 failed and pending results, so reporting cannot hide the regional failure or
 prevent its original journal from being resumed.
 
+To coordinate existing regional configurations with additional independent peer
+connections, link their original files instead of generating a new topology:
+
+```bash
+nebius-vpngw pair link-existing ./regional-reference --left /absolute/existing-a.yaml --right /absolute/existing-b.yaml --connection-a intersite --connection-b intersite --name regional
+nebius-vpngw pair apply regional-reference/pair.json --dry-run
+```
+
+This creates only private operator coordination metadata. It preserves the
+original YAML paths, lifecycle sidecars, gateway names, tunnels, ASNs and secrets.
+Both files must be private, resolved configurations with fixed distinct public
+member endpoints and a complete reciprocal connection graph. The reference pins
+every source byte and the complete configuration, including additional peers.
+Changing either file requires a new reference and fresh regional review. Network
+preparation and endpoint rewriting are unavailable for these references.
+Normal pair apply and its separately confirmed `--repair` path reuse the existing
+regional owners, exact target inspections and prepared/originating barriers.
+Referencing existing files does not authorize any repair or establish readiness.
+
 Completion independently checks current ownership, forwarding, exact encrypted
 routes and required workload route coverage. Workload connectivity remains unknown
 until traffic is measured. Readiness retries preserve the first failing phase and

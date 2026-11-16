@@ -310,6 +310,7 @@ _COMMAND_APPLICABILITY: t.Mapping[str, str] = MappingProxyType(
         "apply": "all",
         "status": "all",
         "pair create-config": "all",
+        "pair link-existing": "all",
         "pair apply": "all",
         "pair status": "all",
         "access add-operator": "all",

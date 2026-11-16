@@ -201,6 +201,7 @@ def test_pagination_audit_covers_the_complete_public_command_tree() -> None:
 
     assert leaves == {
         ("pair", "create-config"),
+        ("pair", "link-existing"),
         ("pair", "apply"),
         ("pair", "status"),
         ("access", "add-operator"),

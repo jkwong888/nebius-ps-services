@@ -280,6 +280,11 @@ def load(path: Path, *, resolved: bool = False) -> tuple[dict, dict[str, dict]]:
     if metadata.st_uid != os.getuid() or stat.S_IMODE(metadata.st_mode) != 0o700:
         raise ValueError("Pair directory must be owned by the operator with mode 0700")
     manifest = json.loads(read_private_file(path) or b"null")
+    if isinstance(manifest, dict) and manifest.get("schema") == "nebius-vpngw.existing-pair.v1":
+        # Existing references retain original YAML paths and lifecycle sidecars.
+        from . import pair_existing
+
+        return pair_existing.load(manifest)
     if (
         not isinstance(manifest, dict)
         or set(manifest)
@@ -384,6 +389,8 @@ def bind_endpoints(path: Path) -> None:
     accepts only an original placeholder or the exact reciprocal allocation.
     """
     manifest, configs = load(path)
+    if manifest["schema"] != SCHEMA:
+        raise ValueError("Existing pair endpoints cannot be rewritten")
     for side in SIDES:
         ips = configs[side]["gateway_group"]["external_ips"]
         if len(ips) != manifest["deployments"][side]["members"] or any(

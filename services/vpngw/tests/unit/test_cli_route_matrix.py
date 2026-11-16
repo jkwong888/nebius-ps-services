@@ -76,6 +76,7 @@ def _config(mode: str) -> dict:
 def test_applicability_registry_covers_every_executable_leaf_and_action_mode() -> None:
     assert set(_COMMAND_APPLICABILITY) == {
         "pair create-config",
+        "pair link-existing",
         "pair apply",
         "pair status",
         "create-config",
@@ -115,6 +116,7 @@ def test_every_executable_leaf_has_a_four_mode_applicability_contract(
 ) -> None:
     all_topologies = {
         "pair create-config",
+        "pair link-existing",
         "pair apply",
         "pair status",
         "failover tunnel",
@@ -719,6 +721,16 @@ def test_vm_ha_only_commands_use_central_policy_before_external_effects(
 
 def test_public_command_parameter_and_alias_manifest_is_exact() -> None:
     expected = {
+        ("pair", "link-existing"): (
+            ("directory",),
+            ("--left",),
+            ("--right",),
+            ("--connection-a",),
+            ("--connection-b",),
+            ("--name",),
+            ("--profile-a",),
+            ("--profile-b",),
+        ),
         ("pair", "create-config"): (
             ("directory",),
             ("--left",),
