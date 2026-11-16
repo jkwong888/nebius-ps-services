@@ -10643,8 +10643,10 @@ or an accepted controller operation awaiting completion is unknown, not positive
 configuration-fault evidence. Confirmed stale configuration/lock evidence and
 native service/configuration inspection retain their specific repair gates.
 An exact own apply lock, expected owner and fresh current-boot passive convergence
-prove an unfinished owner unlock. That observation permits native inspection, not
-a repair inferred from readiness. Fully materialized healthy native state uses
+complete the locked-resume phase proof. That COMPLETE outcome permits native
+unlock inspection, not active-forwarding success or a repair inferred from readiness.
+The unlocked completion probe still requires active forwarding and the exact
+route receipt. Generic positively incomplete observations do not complete either phase. Fully materialized healthy native state uses
 the existing no-op continuation before the canonical unlock; it does not restart
 services or rewrite configuration. The same shared repair accounting remains.
 

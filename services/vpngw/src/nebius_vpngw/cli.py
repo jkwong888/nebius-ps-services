@@ -4393,6 +4393,27 @@ def _vm_ha_fenced_owner_incomplete(payload: dict, *, owner: str, operation: str)
     )
 
 
+def _vm_ha_owner_phase_completion(
+    fetch: t.Callable[[], dict],
+    *,
+    owner: str,
+    binding: t.Any,
+    operation: str,
+    locked: bool,
+):
+    """Keep current-owner forwarding and exact own-lock resume proofs separate."""
+    # COMPLETE authorizes only the selected phase. A locked resume still needs
+    # native unlock inspection and the existing guest authority checks.
+    return _vm_ha_completion_probe(
+        fetch,
+        lambda payload: (
+            _vm_ha_fenced_owner_incomplete(payload, owner=owner, operation=operation)
+            if locked
+            else _owner_activation_predicate(payload, owner=owner, binding=binding) is None
+        ),
+    )
+
+
 def _wait_for_vm_ha_agent_status(
     *,
     predicate: t.Callable[[dict[str, t.Any]], bool],
@@ -12666,7 +12687,7 @@ def _activate_bound_vm_ha(
             from .deploy.activation_driver import activate as recover_activation
 
             def owner_complete(deadline: float, *, locked: bool = False):
-                return _vm_ha_completion_probe(
+                return _vm_ha_owner_phase_completion(
                     lambda: _fetch_vm_ha_agent_status(
                         target=active_target,
                         hostname=active_cfg.hostname,
@@ -12680,22 +12701,10 @@ def _activate_bound_vm_ha(
                         expected_operation_id=operation_id,
                         timeout_seconds=max(0.001, min(15, deadline - time.monotonic())),
                     ),
-                    lambda payload: (
-                        _owner_activation_predicate(
-                            payload, owner=active_node_id, binding=vm_ha_runtime_binding
-                        )
-                        is None
-                    ),
-                    # An exact own lock with fresh current-boot fencing is
-                    # positive evidence of the unfinished unlock. Native
-                    # inspection still decides whether any local repair is
-                    # needed; failed readiness alone never makes that choice.
-                    incomplete=lambda payload: bool(
-                        locked
-                        and _vm_ha_fenced_owner_incomplete(
-                            payload, owner=active_node_id, operation=operation_id
-                        )
-                    ),
+                    owner=active_node_id,
+                    binding=vm_ha_runtime_binding,
+                    operation=operation_id,
+                    locked=locked,
                 )
 
             from .deploy.activation_driver import Completion
